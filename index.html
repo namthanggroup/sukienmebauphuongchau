@@ -388,86 +388,87 @@
     </div>
   </div>
 
-  <script>
-    const SCRIPT_URL = 'https://n8n.taxinamthang.com/webhook-test/a12b5f2b-bddf-4ccb-a88c-6f76c0f4c1f4'; // thay bằng URL webhook n8n thật
+<script>
+  const SCRIPT_URL = 'https://n8n.taxinamthang.com/webhook-test/phuong-chau-mgg'; // ← thay bằng URL webhook n8n thật
 
-    const form = document.getElementById('registerForm');
-    const phoneInput = document.getElementById('phone');
-    const errorText = document.getElementById('errorText');
-    const submitBtn = document.getElementById('submitBtn');
-    const successModal = document.getElementById('successModal');
-    const closeModalBtn = document.getElementById('closeModalBtn');
+  const form = document.getElementById('registerForm');
+  const phoneInput = document.getElementById('phone');
+  const errorText = document.getElementById('errorText');
+  const submitBtn = document.getElementById('submitBtn');
+  const successModal = document.getElementById('successModal');
+  const closeModalBtn = document.getElementById('closeModalBtn');
 
-    function isValidVNPhone(phone) {
-      // chỉ cho 10 ký tự số và bắt đầu bằng 0
-      return /^0\d{9}$/.test(phone);
+  function isValidVNPhone(phone) {
+    // chỉ cho 10 ký tự số và bắt đầu bằng 0
+    return /^0\d{9}$/.test(phone);
+  }
+
+  function showError(msg) {
+    errorText.textContent = msg || '';
+  }
+
+  function openModal() {
+    successModal.classList.add('show');
+  }
+
+  function closeModal() {
+    successModal.classList.remove('show');
+  }
+
+  closeModalBtn.addEventListener('click', closeModal);
+  successModal.addEventListener('click', function (e) {
+    if (e.target === successModal) {
+      closeModal();
+    }
+  });
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    showError('');
+
+    var rawPhone = phoneInput.value || '';
+    var phone = rawPhone.replace(/\D/g, ''); // loại bỏ ký tự không phải số
+
+    if (!phone) {
+      showError('Vui lòng nhập số điện thoại.');
+      return;
     }
 
-    function showError(msg) {
-      errorText.textContent = msg || '';
+    if (!isValidVNPhone(phone)) {
+      showError('Số điện thoại không hợp lệ. Vui lòng nhập đủ 10 số, bắt đầu bằng 0.');
+      return;
     }
 
-    function openModal() {
-      successModal.classList.add('show');
-    }
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Đang gửi...';
 
-    function closeModal() {
-      successModal.classList.remove('show');
-    }
+    // Gửi qua n8n Webhook
+    var formData = new URLSearchParams();
+    formData.append('phone', phone);
 
-    closeModalBtn.addEventListener('click', closeModal);
-    successModal.addEventListener('click', function (e) {
-      if (e.target === successModal) {
-        closeModal();
-      }
-    });
-
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      showError('');
-
-      var rawPhone = phoneInput.value || '';
-      var phone = rawPhone.replace(/\D/g, ''); // loại bỏ ký tự không phải số
-
-      if (!phone) {
-        showError('Vui lòng nhập số điện thoại.');
-        return;
-      }
-
-      if (!isValidVNPhone(phone)) {
-        showError('Số điện thoại không hợp lệ. Vui lòng nhập đủ 10 số, bắt đầu bằng 0.');
-        return;
-      }
-
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Đang gửi...';
-
-      // Gửi qua Apps Script
-      var formData = new URLSearchParams();
-      formData.append('phone', phone);
-
-      fetch(SCRIPT_URL, {
-        method: 'POST',
-        mode: 'no-cors', // tránh lỗi CORS, không đọc được response nhưng đủ để ghi dữ liệu
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
-        },
-        body: formData.toString()
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors', // tránh lỗi CORS, không đọc được response nhưng đủ để n8n nhận
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+      },
+      body: formData.toString()
+    })
+      .then(function () {
+        // Nếu không lỗi mạng, coi như đã gửi thành công lên n8n
+        phoneInput.value = '';
+        showError('');
+        openModal();
       })
-        .then(function () {
-          // Dù không đọc được response, nếu không lỗi mạng thì coi như thành công
-          phoneInput.value = '';
-          showError('');
-          openModal();
-        })
-        .catch(function () {
-          showError('Có lỗi kết nối. Mẹ bầu có thể thử lại sau ít phút.');
-        })
-        .finally(function () {
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Đăng ký ngay';
-        });
-    });
-  </script>
+      .catch(function () {
+        showError('Có lỗi kết nối. Mẹ bầu có thể thử lại sau ít phút.');
+      })
+      .finally(function () {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Đăng ký ngay';
+      });
+  });
+</script>
+
 </body>
 </html>
